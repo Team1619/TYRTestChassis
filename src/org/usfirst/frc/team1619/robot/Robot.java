@@ -76,7 +76,8 @@ public class Robot extends IterativeRobot {
     	drive.arcadeDrive(input.getY(), input.getTwist());
     }
     
-    private void driveX(GenericHID input) {
+    @SuppressWarnings("unused")
+	private void driveX(GenericHID input) {
     	drive.arcadeDrive(input.getY(), input.getX());
     }
 }
