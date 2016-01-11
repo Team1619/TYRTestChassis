@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -59,6 +60,9 @@ public class Robot extends IterativeRobot {
      */
     public void teleopPeriodic() {
         driveZ(rightStick);
+        
+        SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
+        SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
     }
     
     /**
