@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
+import edu.wpi.first.wpilibj.buttons.JoystickButton;
+import edu.wpi.first.wpilibj.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -17,7 +19,13 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 	
-	public Joystick rightStick;
+	private final double[] DEFAULT_ARRAY = new double[0];
+	private final String[] KEYS = {"centerX", "centerY", "area",  "height", "width"};
+	private final String TABLE_NAME = "GRIP/contours";
+	
+	private Joystick rightStick;
+	private JoystickButton followButton; 
+	
 	
 	private CANTalon leftDriveMotor1;
 	private CANTalon leftDriveMotor2;
@@ -29,13 +37,19 @@ public class Robot extends IterativeRobot {
 	private static final int rightDrive2ID = 4;
 	private RobotDrive drive;
 	
-    /**
-     * This function is run when the robot is first started up and should be
-     * used for any initialization code.
-     */
-    public void robotInit() {
-    	rightStick = new Joystick(0);
+	NetworkTable camTable;
+	
+	private boolean turning;
+	private double[][] currentValues;
+	
+	private int imageRecievePeriod = 100;
+	private int imageRecieveValue = 0;
+	
+	public Robot() {
+		rightStick = new Joystick(0);
     	
+		followButton = new JoystickButton(rightStick, 1);
+		
     	leftDriveMotor1 = new CANTalon(leftDrive1ID);
     	leftDriveMotor2 = new CANTalon(leftDrive2ID);
     	rightDriveMotor1 = new CANTalon(rightDrive1ID);
@@ -46,8 +60,32 @@ public class Robot extends IterativeRobot {
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearLeft, true);
     	drive.setInvertedMotor(RobotDrive.MotorType.kFrontRight, true);
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
+    	
+    	camTable = NetworkTable.getTable(TABLE_NAME);
+    	
+    	 turning = false;
+	}
+	
+    /**
+     * This function is run when the robot is first started up and should be
+     * used for any initialization code.
+     */
+    public void robotInit() {
+    	
     }
 
+    public void disabledPeriodic() {
+    	if (imageRecieveValue > imageRecievePeriod) {
+    		currentValues = getTableVals();
+        	if (currentValues[0].length > 0) {
+        		System.out.println(currentValues[0][0]);
+        	}
+        	imageRecieveValue = 0;
+    	}
+    	imageRecieveValue++;
+    	
+    }
+    
     /**
      * This function is called periodically during autonomous
      */
@@ -59,7 +97,23 @@ public class Robot extends IterativeRobot {
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() {
-        driveZ(rightStick);
+        if (followButton.get()) {
+        	currentValues = getTableVals();
+        	turnToContour();
+        }
+        else {
+        	turning = false;
+        	driveZ(rightStick);	
+        }
+    	
+        if (imageRecieveValue > imageRecievePeriod) {
+    		currentValues = getTableVals();
+        	if (currentValues[0].length > 0) {
+        		System.out.println(currentValues[0][0]);
+        	}
+        	imageRecieveValue = 0;
+    	}
+    	imageRecieveValue++;
         
         SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
@@ -79,5 +133,36 @@ public class Robot extends IterativeRobot {
     @SuppressWarnings("unused")
 	private void driveX(GenericHID input) {
     	drive.arcadeDrive(input.getY(), input.getX());
+    }
+    
+    /**
+     * 
+     * @param speed between 1 and 0
+     */
+    private void driveTurn(double speed) {
+    	drive.arcadeDrive(0, speed);
+    }
+    
+    private double[][] getTableVals() {
+    	double[][] vals = new double[5][];
+    	for (int i = 0; i < KEYS.length; i++) {
+    		vals[i] = camTable.getNumberArray(KEYS[i], DEFAULT_ARRAY);
+    	}
+    	
+    	return vals;
+    }
+    
+    private void turnToContour() {
+    	if (currentValues[0].length == 1) {
+    		if (currentValues[0][0] > 170) {
+    			driveTurn(0.25 + ((currentValues[0][0]-170)/170) * 0.3);
+    		}
+    		else {
+    			driveTurn(-(0.25 + ((170 - currentValues[0][0])/170) * 0.3));
+    		}
+    	}
+    	else {
+    		driveTurn(-0.3);
+    	}
     }
 }
