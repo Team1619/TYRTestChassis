@@ -31,6 +31,7 @@ public class Robot extends IterativeRobot {
 	private CANTalon leftDriveMotor2;
 	private CANTalon rightDriveMotor1;
 	private CANTalon rightDriveMotor2;
+	
 	private static final int leftDrive1ID = 1;
 	private static final int leftDrive2ID = 2;
 	private static final int rightDrive1ID = 3;
@@ -44,6 +45,8 @@ public class Robot extends IterativeRobot {
 	
 	private int imageRecievePeriod = 100;
 	private int imageRecieveValue = 0;
+	
+	private double prevImageX = 0;
 	
 	public Robot() {
 		rightStick = new Joystick(0);
@@ -117,6 +120,7 @@ public class Robot extends IterativeRobot {
         
         SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
+        SmartDashboard.putNumber("Camera X", prevImageX);
     }
     
     /**
@@ -153,16 +157,22 @@ public class Robot extends IterativeRobot {
     }
     
     private void turnToContour() {
-    	if (currentValues[0].length == 1) {
-    		if (currentValues[0][0] > 170) {
-    			driveTurn(0.25 + ((currentValues[0][0]-170)/170) * 0.3);
+    	if (currentValues[0].length >= 1) {
+    		if (currentValues[0][0] > 185) {
+    			driveTurn(((currentValues[0][0]-170)/170) * 0.5);
     		}
-    		else {
-    			driveTurn(-(0.25 + ((170 - currentValues[0][0])/170) * 0.3));
+    		else if (currentValues[0][0] < 155) {
+    			driveTurn(-(((170 - currentValues[0][0])/170) * 0.5));
     		}
+    		
+    		if (currentValues[0][0] != prevImageX) {
+        		System.out.println(currentValues[0][0]);
+        	}
+        	prevImageX = currentValues[0][0];
     	}
     	else {
-    		driveTurn(-0.3);
+    		driveTurn(-0.0);
     	}
+    	
     }
 }
