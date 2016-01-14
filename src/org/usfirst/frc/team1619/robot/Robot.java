@@ -1,6 +1,8 @@
 
 package org.usfirst.frc.team1619.robot;
 
+import edu.wpi.first.wpilibj.CANSpeedController.ControlMode;
+import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.IterativeRobot;
@@ -19,23 +21,36 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 	
+	private final double kArmMotor = 0.2;
+	
 	private final double[] DEFAULT_ARRAY = new double[0];
 	private final String[] KEYS = {"centerX", "centerY", "area",  "height", "width"};
 	private final String TABLE_NAME = "GRIP/contours";
 	
 	private Joystick rightStick;
-	private JoystickButton followButton; 
+	private JoystickButton followButton;
+	
+	private Joystick leftStick;
+	private JoystickButton spareForward;
+	private JoystickButton spareReverse;
 	
 	
 	private CANTalon leftDriveMotor1;
 	private CANTalon leftDriveMotor2;
 	private CANTalon rightDriveMotor1;
 	private CANTalon rightDriveMotor2;
+	private CANTalon armMotor1;
+	private CANTalon armMotor2;
+	private CANTalon spareMotor;
 	
 	private static final int leftDrive1ID = 1;
 	private static final int leftDrive2ID = 2;
 	private static final int rightDrive1ID = 3;
 	private static final int rightDrive2ID = 4;
+	private static final int armMotor1ID = 11;
+	private static final int armMotor2ID = 12;
+	private static final int spareMotorID = 5;
+	
 	private RobotDrive drive;
 	
 	NetworkTable camTable;
@@ -50,19 +65,33 @@ public class Robot extends IterativeRobot {
 	
 	public Robot() {
 		rightStick = new Joystick(0);
+		leftStick = new Joystick(1);
     	
 		followButton = new JoystickButton(rightStick, 1);
+		
+		spareForward = new JoystickButton(rightStick, 6);
+		spareReverse = new JoystickButton(rightStick, 7);
 		
     	leftDriveMotor1 = new CANTalon(leftDrive1ID);
     	leftDriveMotor2 = new CANTalon(leftDrive2ID);
     	rightDriveMotor1 = new CANTalon(rightDrive1ID);
     	rightDriveMotor2 = new CANTalon(rightDrive2ID);
+    	armMotor1 = new CANTalon(armMotor1ID);
+    	armMotor2 = new CANTalon(armMotor2ID);
+    	spareMotor = new CANTalon(spareMotorID);
     	
     	drive = new RobotDrive(leftDriveMotor1, leftDriveMotor2, rightDriveMotor1, rightDriveMotor2);
     	drive.setInvertedMotor(RobotDrive.MotorType.kFrontLeft, true);
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearLeft, true);
     	drive.setInvertedMotor(RobotDrive.MotorType.kFrontRight, true);
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
+    	
+    	armMotor1.setInverted(false);
+    	armMotor2.setInverted(true);
+//    	armMotor2.changeControlMode(TalonControlMode.Follower);
+//    	armMotor2.set(armMotor1ID);
+    	
+    	spareMotor.setInverted(false);
     	
     	camTable = NetworkTable.getTable(TABLE_NAME);
     	
@@ -100,6 +129,10 @@ public class Robot extends IterativeRobot {
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() {
+    	armManual(leftStick);
+    	
+    	spareMotor(rightStick, spareForward, spareReverse);
+    	
         if (followButton.get()) {
         	currentValues = getTableVals();
         	turnToContour();
@@ -137,6 +170,24 @@ public class Robot extends IterativeRobot {
     @SuppressWarnings("unused")
 	private void driveX(GenericHID input) {
     	drive.arcadeDrive(input.getY(), input.getX());
+    }
+    
+    private void armManual(GenericHID input) {
+    	armMotor1.set(input.getY() * kArmMotor);
+    	armMotor2.set(input.getY() * kArmMotor);
+    }
+    
+    private void spareMotor(GenericHID input, JoystickButton forward, JoystickButton reverse) {
+    	double thrott = (input.getThrottle());
+    	if(forward.get()) {
+    		spareMotor.set(thrott);
+    	}
+    	else if(reverse.get()) {
+    		spareMotor.set(-thrott);
+    	}
+    	else {
+    		spareMotor.set(0);
+    	}
     }
     
     /**
