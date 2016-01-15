@@ -23,11 +23,15 @@ public class Robot extends IterativeRobot {
 	
 	private static final double ARM_MOTOR = 0.2;
 	
-	private final double[] DEFAULT_ARRAY = new double[0];
-	private final String[] KEYS = {"centerX", "centerY", "area",  "height", "width"};
-	private final String TABLE_NAME = "GRIP/contours";
+	private static final double[] DEFAULT_ARRAY = new double[0];
 	
-	private final boolean TWIST_DRIVE = true;
+	private static final String[] CONTOUR_KEYS = {"centerX", "centerY", "area",  "height", "width"};
+	private static final String CONTOUR_TABLE_NAME = "GRIP/contours";
+	
+	private static final String[] LINE_KEYS = {"length", "x1", "x2", "y1", "y2", "angle"};
+	private static final String LINE_TABLE_NAME = "GRIP/lines"; 
+	
+	private static final boolean TWIST_DRIVE = true;
 	
 	private Joystick rightStick;
 	private JoystickButton followButton;
@@ -55,14 +59,13 @@ public class Robot extends IterativeRobot {
 	
 	private RobotDrive drive;
 	
-	NetworkTable camTable;
+	NetworkTable contourTable;
+	NetworkTable lineTable;
 	
 	private double[][] currentValues;
 	
 	private int imageReceivePeriod = 50;
 	private int imageReceiveValue = 0;
-	
-	private double prevImageX = 0;
 	
 	public Robot() {
 		rightStick = new Joystick(0);
@@ -94,7 +97,8 @@ public class Robot extends IterativeRobot {
     	
     	spareMotor.setInverted(false);
     	
-    	camTable = NetworkTable.getTable(TABLE_NAME);
+    	contourTable = NetworkTable.getTable(CONTOUR_TABLE_NAME);
+    	lineTable = NetworkTable.getTable(LINE_TABLE_NAME);
 	}
 	
     /**
@@ -138,12 +142,20 @@ public class Robot extends IterativeRobot {
     
     private void displayVals() {
     	if (imageReceiveValue > imageReceivePeriod) {
-    		double[][] tableVals = getTableVals();
-            if (tableVals[0].length > 0) {
-            	for (int i = 0; i < tableVals.length; i++) {
-                	SmartDashboard.putNumber(KEYS[i], tableVals[i][0]);	
+    		double[][] contourTableVals = getContourTableVals();
+            if (contourTableVals[0].length > 0) {
+            	for (int i = 0; i < contourTableVals.length; i++) {
+                	SmartDashboard.putNumber(CONTOUR_KEYS[i], contourTableVals[i][0]);	
                 }
             }
+            
+            double[][] lineTableVals = getLineTableVals();
+            if (lineTableVals[0].length > 0) {
+            	for (int i = 0; i < lineTableVals.length; i++) {
+                	SmartDashboard.putNumber(LINE_KEYS[i], lineTableVals[i][0]);	
+                }
+            }
+            
             imageReceiveValue -= imageReceivePeriod;
     	}
     	imageReceiveValue++;
@@ -154,7 +166,7 @@ public class Robot extends IterativeRobot {
     
     private void drive(GenericHID input) {
     	if (followButton.get()) {
-        	currentValues = getTableVals();
+        	currentValues = getContourTableVals();
         	turnToContour();
         }
         else {        
@@ -193,18 +205,23 @@ public class Robot extends IterativeRobot {
     	}
     }
     
-    /**
-     * 
-     * @param turnSpeed between 1 and 0
-     */
     private void driveTurn(double turnSpeed) {
     	drive.arcadeDrive(0, turnSpeed);
     }
     
-    private double[][] getTableVals() {
-    	double[][] vals = new double[5][];
-    	for (int i = 0; i < KEYS.length; i++) {
-    		vals[i] = camTable.getNumberArray(KEYS[i], DEFAULT_ARRAY);
+    private double[][] getContourTableVals() {
+    	return getTableVals(CONTOUR_KEYS, contourTable);
+    }
+    
+    private double[][] getLineTableVals() {
+    	return getTableVals(LINE_KEYS, lineTable);
+    }
+    
+    private double[][] getTableVals(String[] keys, NetworkTable table) {
+    	double[][] vals = new double[keys.length][];
+    	
+    	for (int i = 0; i < keys.length; i++) {
+    		vals[i] = table.getNumberArray(keys[i], DEFAULT_ARRAY);
     	}
     	
     	return vals;
@@ -218,15 +235,14 @@ public class Robot extends IterativeRobot {
     		else if (currentValues[0][0] < 155) {
     			driveTurn(-(((170 - currentValues[0][0])/170) * 0.5));
     		}
-    		
-    		if (currentValues[0][0] != prevImageX) {
-        		System.out.println(currentValues[0][0]);
-        	}
-        	prevImageX = currentValues[0][0];
     	}
     	else {
     		driveTurn(-0.0);
     	}
+    	
+    }
+    
+    private void makeQuadrilateral() {
     	
     }
 }
