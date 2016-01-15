@@ -108,7 +108,7 @@ public class Robot extends IterativeRobot {
     }
 
     public void disabledPeriodic() {
-    	displayVals();    	displayVals();
+    	displayVals();
     }
     
     /**
@@ -128,7 +128,6 @@ public class Robot extends IterativeRobot {
     	drive(rightStick);
     	
         displayVals();
-        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
     }
     
     /**
@@ -152,6 +151,7 @@ public class Robot extends IterativeRobot {
     	
     	SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
+        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
     }
     
     private void drive(GenericHID input) {
