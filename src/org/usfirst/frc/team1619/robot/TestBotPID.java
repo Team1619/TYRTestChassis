@@ -1,5 +1,7 @@
 package org.usfirst.frc.team1619.robot;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class TestBotPID {
 	private double kP;
 	private double kI;
@@ -36,7 +38,7 @@ public class TestBotPID {
 	}
 	
 	public double get(double currentValue) {
-		return calcPID(currentValue);
+		return calcPID(setPoint - currentValue);
 	}
 	
 	private double calcPID(double error) {
@@ -59,7 +61,6 @@ public class TestBotPID {
 		//output
 		output = pCalc + iCalc + dCalc;
 		this.prevError = currentError;
-		
 		return output;
 	}
 }

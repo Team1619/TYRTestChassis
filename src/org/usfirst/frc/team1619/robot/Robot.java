@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends IterativeRobot {
 	
 	private final double ARM_MOTOR = 0.5;
-	private final double ARM_P = 0.0001;
+	private final double ARM_P = 0.1;
 	private final double ARM_I = 0;
 	private final double ARM_D = 0;
 	
@@ -122,8 +122,8 @@ public class Robot extends IterativeRobot {
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() {
-    	armPID.setTarget(leftStick.getY());
-    	armMotor1.set(armPID.get(armMotor1.getEncVelocity()));
+//    	armPID.setTarget((leftStick.getY()+300)+300);
+//    	armMotor1.set(armPID.get(armMotor1.getEncPosition()));
     	
     	drive(rightStick);
     	
@@ -151,7 +151,7 @@ public class Robot extends IterativeRobot {
     	
     	SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
-        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
+        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncVelocity());
     }
     
     private void drive(GenericHID input) {
