@@ -21,7 +21,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 	
-	private final double kArmMotor = 0.2;
+	private final double kArmMotor = 0.5;
+	private final double kArmP = 0.0001;
+	private final double kArmI = 0;
+	private final double kArmD = 0;
 	
 	private final double[] DEFAULT_ARRAY = new double[0];
 	private final String[] KEYS = {"centerX", "centerY", "area",  "height", "width"};
@@ -51,6 +54,7 @@ public class Robot extends IterativeRobot {
 	private static final int armMotor2ID = 12;
 	private static final int spareMotorID = 5;
 	
+	
 	private RobotDrive drive;
 	
 	NetworkTable camTable;
@@ -62,6 +66,8 @@ public class Robot extends IterativeRobot {
 	private int imageRecieveValue = 0;
 	
 	private double prevImageX = 0;
+	
+	private TestBotPID armPID;
 	
 	public Robot() {
 		rightStick = new Joystick(0);
@@ -95,7 +101,9 @@ public class Robot extends IterativeRobot {
     	
     	camTable = NetworkTable.getTable(TABLE_NAME);
     	
-    	 turning = false;
+    	turning = false;
+    	
+    	armPID = new TestBotPID(kArmP, kArmI, kArmD);
 	}
 	
     /**
@@ -129,9 +137,8 @@ public class Robot extends IterativeRobot {
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() {
-    	armManual(leftStick);
-    	
-    	spareMotor(rightStick, spareForward, spareReverse);
+    	armPID.setTarget(leftStick.getY());
+    	armMotor1.set(armPID.get(armMotor1.getEncVelocity()));
     	
         if (followButton.get()) {
         	currentValues = getTableVals();
@@ -154,6 +161,7 @@ public class Robot extends IterativeRobot {
         SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Camera X", prevImageX);
+        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
     }
     
     /**

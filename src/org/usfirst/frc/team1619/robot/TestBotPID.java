@@ -25,6 +25,12 @@ public class TestBotPID {
 		integral = 0;
 	}
 	
+	public void setValues(double pValue, double iValue, double dValue) {
+		this.kP = pValue;
+		this.kI = iValue;
+		this.kD = dValue;
+	}
+	
 	public void setTarget(double target) {
 		this.setPoint = target;
 	}
