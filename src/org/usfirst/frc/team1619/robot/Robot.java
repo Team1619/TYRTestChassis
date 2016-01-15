@@ -21,21 +21,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 	
-	private final double kArmMotor = 0.5;
-	private final double kArmP = 0.0001;
-	private final double kArmI = 0;
-	private final double kArmD = 0;
+	private final double ARM_MOTOR = 0.5;
+	private final double ARM_P = 0.0001;
+	private final double ARM_I = 0;
+	private final double ARM_D = 0;
 	
 	private final double[] DEFAULT_ARRAY = new double[0];
 	private final String[] KEYS = {"centerX", "centerY", "area",  "height", "width"};
 	private final String TABLE_NAME = "GRIP/contours";
 	
+	private final boolean TWIST_DRIVE = true;
+	
 	private Joystick rightStick;
 	private JoystickButton followButton;
 	
 	private Joystick leftStick;
-	private JoystickButton spareForward;
-	private JoystickButton spareReverse;
 	
 	
 	private CANTalon leftDriveMotor1;
@@ -54,16 +54,14 @@ public class Robot extends IterativeRobot {
 	private static final int armMotor2ID = 12;
 	private static final int spareMotorID = 5;
 	
-	
 	private RobotDrive drive;
 	
 	NetworkTable camTable;
 	
-	private boolean turning;
 	private double[][] currentValues;
 	
-	private int imageRecievePeriod = 100;
-	private int imageRecieveValue = 0;
+	private int imageReceivePeriod = 50;
+	private int imageReceiveValue = 0;
 	
 	private double prevImageX = 0;
 	
@@ -74,9 +72,6 @@ public class Robot extends IterativeRobot {
 		leftStick = new Joystick(1);
     	
 		followButton = new JoystickButton(rightStick, 1);
-		
-		spareForward = new JoystickButton(rightStick, 6);
-		spareReverse = new JoystickButton(rightStick, 7);
 		
     	leftDriveMotor1 = new CANTalon(leftDrive1ID);
     	leftDriveMotor2 = new CANTalon(leftDrive2ID);
@@ -93,17 +88,15 @@ public class Robot extends IterativeRobot {
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
     	
     	armMotor1.setInverted(false);
+    	armMotor2.changeControlMode(TalonControlMode.Follower);
     	armMotor2.setInverted(true);
-//    	armMotor2.changeControlMode(TalonControlMode.Follower);
-//    	armMotor2.set(armMotor1ID);
+    	armMotor2.set(armMotor1ID);
     	
     	spareMotor.setInverted(false);
     	
     	camTable = NetworkTable.getTable(TABLE_NAME);
     	
-    	turning = false;
-    	
-    	armPID = new TestBotPID(kArmP, kArmI, kArmD);
+    	armPID = new TestBotPID(ARM_P, ARM_I, ARM_D);
 	}
 	
     /**
@@ -115,15 +108,7 @@ public class Robot extends IterativeRobot {
     }
 
     public void disabledPeriodic() {
-    	if (imageRecieveValue > imageRecievePeriod) {
-    		currentValues = getTableVals();
-        	if (currentValues[0].length > 0) {
-        		System.out.println(currentValues[0][0]);
-        	}
-        	imageRecieveValue = 0;
-    	}
-    	imageRecieveValue++;
-    	
+    	displayVals();    	displayVals();
     }
     
     /**
@@ -140,27 +125,9 @@ public class Robot extends IterativeRobot {
     	armPID.setTarget(leftStick.getY());
     	armMotor1.set(armPID.get(armMotor1.getEncVelocity()));
     	
-        if (followButton.get()) {
-        	currentValues = getTableVals();
-        	turnToContour();
-        }
-        else {
-        	turning = false;
-        	driveZ(rightStick);	
-        }
+    	drive(rightStick);
     	
-        if (imageRecieveValue > imageRecievePeriod) {
-    		currentValues = getTableVals();
-        	if (currentValues[0].length > 0) {
-        		System.out.println(currentValues[0][0]);
-        	}
-        	imageRecieveValue = 0;
-    	}
-    	imageRecieveValue++;
-        
-        SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
-        SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
-        SmartDashboard.putNumber("Camera X", prevImageX);
+        displayVals();
         SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
     }
     
@@ -171,39 +138,56 @@ public class Robot extends IterativeRobot {
     
     }
     
+    private void displayVals() {
+    	if (imageReceiveValue > imageReceivePeriod) {
+    		double[][] tableVals = getTableVals();
+            if (tableVals[0].length > 0) {
+            	for (int i = 0; i < tableVals.length; i++) {
+                	SmartDashboard.putNumber(KEYS[i], tableVals[i][0]);	
+                }
+            }
+            imageReceiveValue -= imageReceivePeriod;
+    	}
+    	imageReceiveValue++;
+    	
+    	SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
+        SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
+    }
+    
+    private void drive(GenericHID input) {
+    	if (followButton.get()) {
+        	currentValues = getTableVals();
+        	turnToContour();
+        }
+        else {        
+	    	if (TWIST_DRIVE) {
+	    		driveZ(input);
+	    	}
+	    	else {
+	    		driveX(input);
+	    	}
+        }
+    }
+    
     private void driveZ(GenericHID input) {
     	drive.arcadeDrive(input.getY(), input.getTwist());
     }
     
-    @SuppressWarnings("unused")
 	private void driveX(GenericHID input) {
     	drive.arcadeDrive(input.getY(), input.getX());
     }
     
     private void armManual(GenericHID input) {
-    	armMotor1.set(input.getY() * kArmMotor);
-    	armMotor2.set(input.getY() * kArmMotor);
-    }
-    
-    private void spareMotor(GenericHID input, JoystickButton forward, JoystickButton reverse) {
-    	double thrott = (input.getThrottle());
-    	if(forward.get()) {
-    		spareMotor.set(thrott);
-    	}
-    	else if(reverse.get()) {
-    		spareMotor.set(-thrott);
-    	}
-    	else {
-    		spareMotor.set(0);
-    	}
+    	armMotor1.set(input.getY() * ARM_MOTOR);
+    	armMotor2.set(input.getY() * ARM_MOTOR);
     }
     
     /**
      * 
-     * @param speed between 1 and 0
+     * @param turnSpeed between 1 and 0
      */
-    private void driveTurn(double speed) {
-    	drive.arcadeDrive(0, speed);
+    private void driveTurn(double turnSpeed) {
+    	drive.arcadeDrive(0, turnSpeed);
     }
     
     private double[][] getTableVals() {
