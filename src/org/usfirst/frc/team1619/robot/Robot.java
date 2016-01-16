@@ -369,5 +369,4 @@ public class Robot extends IterativeRobot {
     	String[] dataProblems = {"Contour analyzed", "Missing lines", "Missing contour stats", "Missing both"};
     	SmartDashboard.putString("Status", dataProblems[debug]);
     }
-	
 }
