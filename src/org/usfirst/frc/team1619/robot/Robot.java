@@ -33,12 +33,16 @@ public class Robot extends IterativeRobot {
 	private static final String CONTOUR_TABLE_NAME = "GRIP/contours";
 
 	private static final String[] LINE_KEYS = {"length", "x1", "x2", "y1", "y2", "angle"};
-	private static final String LINE_TABLE_NAME = "GRIP/lines";
+
+	private static final String LINE_TABLE_NAME = "GRIP/lines"; 
 	private static final double cameraPictureHeight = 240;
 	public static final int x1Coord = 1;
-	public static final int y1Coord = 2;
-	public static final int x2Coord = 3;
+	public static final int x2Coord = 2;
+	public static final int y1Coord = 3;
 	public static final int y2Coord = 4;
+	
+
+
 
 	private static final boolean TWIST_DRIVE = true;
 
@@ -145,7 +149,7 @@ public class Robot extends IterativeRobot {
 //    	armManual(leftStick);
 
     	drive(rightStick);
-
+    	makeQuadrilateral();
         displayVals();
     }
 
@@ -159,7 +163,7 @@ public class Robot extends IterativeRobot {
     private void displayVals() {
     	if (imageReceiveValue > imageReceivePeriod) {
     		double[][] contourTableVals = getContourTableVals();
-            if (contourTableVals[0].length > 0) {
+            if (contourTableVals.length > 0) {
                 SmartDashboard.putString("Contour", Arrays.toString(CONTOUR_KEYS));
             	for (int i = 0; i < contourTableVals.length; i++) {
                 	SmartDashboard.putString("Contour" + i, Arrays.toString(contourTableVals[i]));
@@ -167,10 +171,10 @@ public class Robot extends IterativeRobot {
             }
 
             double[][] lineTableVals = getLineTableVals();
-            if (lineTableVals[0].length > 0) {
+            if (lineTableVals.length > 0) {
                 SmartDashboard.putString("Line", Arrays.toString(LINE_KEYS));
             	for (int i = 0; i < lineTableVals.length; i++) {
-                	SmartDashboard.putString(LINE_KEYS[i], Arrays.toString(lineTableVals[i]));
+                	SmartDashboard.putString("Line" + i, Arrays.toString(lineTableVals[i]));
                 }
             }
 
@@ -228,16 +232,22 @@ public class Robot extends IterativeRobot {
     	for (int i = 0; i < keys.length; i++) {
     		vals[i] = table.getNumberArray(keys[i], DEFAULT_ARRAY);
     	}
-
-    	double[][] organisedVals = new double[(vals[0].length)][keys.length];
-    	for( int l = 0; l < (vals[0].length); l++ )
+    	
+    	double[][] organisedVals;
+    	if(vals[0].length>0)
     	{
-    		for( int w = 0; w < keys.length; w++ )
-        	{
-        		organisedVals[l][w] = vals[w][l];
-        	}
+    		organisedVals = new double[(vals[0].length)][keys.length];
+    		for( int l = 0; l < (vals[0].length); l++ )
+    		{
+    			for( int w = 0; w < keys.length; w++ )
+    			{
+    				 double val = vals[w][l];
+    				 organisedVals[l][w] = val;
+    			}
+    		}
+    	}else{
+    		organisedVals = new double[0][0];
     	}
-
     	return organisedVals;
     }
 
@@ -256,76 +266,107 @@ public class Robot extends IterativeRobot {
 
     }
 
-    @SuppressWarnings("unused")
 	private void makeQuadrilateral() {
     	double[][] perimeter = getLineTableVals();
     	double[][] contourStats = getContourTableVals();
-    	double xCenter = contourStats[0][0];
-    	// double yCenter = contourStats[0][1];
-    	double leftTop = 0;
-    	double leftBottom = cameraPictureHeight;
-    	double rightTop = 0;
-    	double rightBottom = cameraPictureHeight;
-    	double leftTopX = 0;
-    	double leftBottomX = 0;
-    	double rightTopX = 0;
-    	double rightBottomX = 0;
-    	for( double[] d : perimeter)
+    	int debug = 0;
+    	if(perimeter.length > 0 && contourStats.length > 0)
     	{
-    		if(d[x1Coord] < xCenter && d[x2Coord] < xCenter)
+    		double xCenter = contourStats[0][0];
+    		// double yCenter = contourStats[0][1];
+    		double leftTop = cameraPictureHeight;
+    		double leftBottom = 0;
+    		double rightTop = cameraPictureHeight;
+    		double rightBottom = 0;
+    		double leftTopX = 0;
+    		double leftBottomX = 0;
+    		double rightTopX = 0;
+    		double rightBottomX = 0;
+    		for( double[] d : perimeter)
     		{
-    			if(d[y1Coord] > leftTop)
+    			if(d[x1Coord] < xCenter && d[x2Coord] < xCenter)
     			{
-    				leftTop = d[y1Coord];
-    				leftTopX = d[x1Coord];
+    				if(d[y1Coord] < leftTop)
+    				{
+    					leftTop = d[y1Coord];
+    					leftTopX = d[x1Coord];
+    				}
+    				if(d[y2Coord] < leftTop)
+    				{
+    					leftTop = d[y2Coord];
+    					leftTopX = d[x2Coord];
+    				}
+    				if(d[y1Coord] > leftBottom)
+    				{
+    					leftBottom = d[y1Coord];
+    					leftBottomX = d[x1Coord];
+    				}    				
+    				if(d[y2Coord] > leftBottom)
+    				{
+    					leftBottom = d[y2Coord];
+    					leftBottomX = d[x2Coord];
+    				}
     			}
-    			if(d[y2Coord] > leftTop)
+    			if(d[x1Coord] > xCenter && d[x2Coord] > xCenter)
     			{
-    				leftTop = d[y2Coord];
-    				leftTopX = d[x2Coord];
-    			}
-    			if(d[y1Coord] < leftBottom)
-    			{
-    				leftBottom = d[y1Coord];
-    				leftBottomX = d[x1Coord];
-    			}
-    			if(d[y2Coord] < leftBottom)
-    			{
-    				leftBottom = d[y2Coord];
-    				leftBottomX = d[x2Coord];
+    				if(d[y1Coord] < rightTop)
+    				{
+    					rightTop = d[y1Coord];
+    					rightTopX = d[x1Coord];
+    				}
+    				if(d[y2Coord] < rightTop)
+    				{
+    					rightTop = d[y2Coord];
+    					rightTopX = d[x2Coord];
+    				}
+    				if(d[y1Coord] > rightBottom)
+    				{
+    					rightBottom = d[y1Coord];
+    					rightBottomX = d[x1Coord];
+    				}
+    				if(d[y2Coord] > rightBottom)
+    				{
+    					rightBottom = d[y2Coord];
+    					rightBottomX = d[x2Coord];
+    				}
     			}
     		}
-    		if(d[x1Coord] > xCenter && d[x2Coord] > xCenter)
-    		{
-    			if(d[y1Coord] > rightTop)
-    			{
-    				rightTop = d[y1Coord];
-    				rightTopX = d[x1Coord];
-    			}
-    			if(d[y2Coord] > rightTop)
-    			{
-    				rightTop = d[y2Coord];
-    				rightTopX = d[x2Coord];
-    			}
-    			if(d[y1Coord] < rightBottom)
-    			{
-    				rightBottom = d[y1Coord];
-    				rightBottomX = d[x1Coord];
-    			}
-    			if(d[y2Coord] < rightBottom)
-    			{
-    				rightBottom = d[y2Coord];
-    				rightBottomX = d[x2Coord];
-    			}
-    		}
+    		double[] leftTopCoords = {leftTopX, leftTop};
+    		double[] leftBottomCoords = {leftBottomX, leftBottom};
+    		double[] rightTopCoords = {rightTopX, rightTop};
+    		double[] rightBottomCoords = {rightBottomX, rightBottom};
+    		SmartDashboard.putString("leftTopCoords", Arrays.toString(leftTopCoords));
+    		SmartDashboard.putString("leftBottomCoords", Arrays.toString(leftBottomCoords));
+    		SmartDashboard.putString("rightTopCoords", Arrays.toString(rightTopCoords));
+    		SmartDashboard.putString("rightBottomCoords", Arrays.toString(rightBottomCoords));
+    		
+    		double slopeUpper = Math.toDegrees(Math.atan( (rightTop - leftTop) / (rightTopX - leftTopX) ));
+    		double slopeLower = Math.toDegrees(Math.atan( (rightBottom - leftBottom) / (rightBottomX - leftBottomX) ));
+    		double slopeLeft = Math.toDegrees(Math.atan( (leftBottom - leftTop) / (leftTopX - leftBottomX) ));
+    		double slopeRight = Math.toDegrees(Math.atan( (rightBottom - rightTop) / (rightTopX - rightBottomX) ));
+    		SmartDashboard.putNumber("Upper slope", slopeUpper);
+    		SmartDashboard.putNumber("Lower slope", slopeLower);
+    		SmartDashboard.putNumber("Left slope", slopeLeft);
+    		SmartDashboard.putNumber("Right slope", slopeRight);
+    		
+    		double[] topMidpoint = {(leftTopX + rightTopX)/2, (leftTop + rightTop)/2};
+    		double[] bottomMidpoint = {(leftBottomX + rightBottomX)/2, (leftBottom + rightBottom)/2};
+    		//SmartDashboard.putString("Top midpoint", Arrays.toString(topMidpoint));
+    		//SmartDashboard.putString("Bottom midpoint", Arrays.toString(bottomMidpoint));
+    		
+    		double heightCenter = (bottomMidpoint[1] - topMidpoint[1]);
+    		SmartDashboard.putNumber("Height at center", heightCenter);
+    		
     	}
-    	double[] leftTopCoords = {leftTopX, leftTop};
-    	double[] leftBottomCoords = {leftBottomX, leftBottom};
-    	double[] rightTopCoords = {rightTopX, leftTop};
-    	double[] rightBottomCoords = {rightBottomX, rightBottom};
-    	SmartDashboard.putString("leftTopCoords", leftTopCoords.toString());
-    	SmartDashboard.putString("leftBottomCoords", leftBottomCoords.toString());
-    	SmartDashboard.putString("rightTopCoords", rightTopCoords.toString());
-    	SmartDashboard.putString("rightBottomCoords", rightBottomCoords.toString());
+    	if(perimeter.length == 0)
+    	{
+    		debug += 1;
+    	}
+    	if(contourStats.length == 0)
+    	{
+    		debug += 2;
+    	}
+    	String[] dataProblems = {"Contour analyzed", "Missing lines", "Missing contour stats", "Missing both"};
+    	SmartDashboard.putString("Status", dataProblems[debug]);
     }
 }
