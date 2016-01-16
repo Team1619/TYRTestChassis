@@ -1,14 +1,11 @@
 package org.usfirst.frc.team1619.robot;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
 public class TestBotPID {
 	private double kP;
 	private double kI;
 	private double kD;
 	
 	private double setPoint;
-	private double measuredValue;
 	private double prevError;
 	private double integral;
 	
@@ -22,7 +19,6 @@ public class TestBotPID {
 		this.kD = dValue;
 		
 		setPoint = 0;
-		measuredValue = 0;
 		prevError = 0;
 		integral = 0;
 	}
