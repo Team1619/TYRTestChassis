@@ -21,9 +21,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends IterativeRobot {
 	
-	private final double ARM_MOTOR = 0.5;
-	private final double ARM_P = 0.1;
-	private final double ARM_I = 0;
+	private final double ARM_MOTOR = 1.0;
+	private final int ARM_ENC_TICKS_REV = 1200;
+	private final double ARM_P = 0.0018;
+	private final double ARM_I = 0.00001;
 	private final double ARM_D = 0;
 	
 	private static final double[] DEFAULT_ARRAY = new double[0];
@@ -40,6 +41,8 @@ public class Robot extends IterativeRobot {
 	private JoystickButton followButton;
 	
 	private Joystick leftStick;
+	private JoystickButton armPIDButton;
+	private JoystickButton resetArmEncButton;
 	
 	
 	private CANTalon leftDriveMotor1;
@@ -75,13 +78,14 @@ public class Robot extends IterativeRobot {
 		leftStick = new Joystick(1);
     	
 		followButton = new JoystickButton(rightStick, 1);
+		armPIDButton = new JoystickButton(leftStick, 1);
+		resetArmEncButton = new JoystickButton(leftStick, 2);
 		
     	leftDriveMotor1 = new CANTalon(leftDrive1ID);
     	leftDriveMotor2 = new CANTalon(leftDrive2ID);
     	rightDriveMotor1 = new CANTalon(rightDrive1ID);
     	rightDriveMotor2 = new CANTalon(rightDrive2ID);
     	armMotor1 = new CANTalon(armMotor1ID);
-    	armMotor2 = new CANTalon(armMotor2ID);
     	spareMotor = new CANTalon(spareMotorID);
     	
     	drive = new RobotDrive(leftDriveMotor1, leftDriveMotor2, rightDriveMotor1, rightDriveMotor2);
@@ -91,9 +95,6 @@ public class Robot extends IterativeRobot {
     	drive.setInvertedMotor(RobotDrive.MotorType.kRearRight, true);
     	
     	armMotor1.setInverted(false);
-    	armMotor2.changeControlMode(TalonControlMode.Follower);
-    	armMotor2.setInverted(true);
-    	armMotor2.set(armMotor1ID);
     	
     	spareMotor.setInverted(false);
     	
@@ -126,8 +127,17 @@ public class Robot extends IterativeRobot {
      * This function is called periodically during operator control
      */
     public void teleopPeriodic() {
-//    	armPID.setTarget((leftStick.getY()+300)+300);
-//    	armMotor1.set(armPID.get(armMotor1.getEncPosition()));
+    	if(armPIDButton.get()) {
+    		armPID.setTarget(leftStick.getY() * (ARM_ENC_TICKS_REV / 4));
+        	armMotor1.set(armPID.get(armMotor1.getEncPosition()));
+    	}
+    	else if(resetArmEncButton.get()) {
+    		armMotor1.setEncPosition(0);
+    	}
+    	else {
+    		armManual(leftStick);
+    	}
+//    	armManual(leftStick);
     	
     	drive(rightStick);
     	
@@ -163,7 +173,7 @@ public class Robot extends IterativeRobot {
     	
     	SmartDashboard.putNumber("Left Encoder", leftDriveMotor1.getEncPosition());
         SmartDashboard.putNumber("Right Encoder", rightDriveMotor1.getEncPosition());
-        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncVelocity());
+        SmartDashboard.putNumber("Arm Encoder", armMotor1.getEncPosition());
     }
     
     private void drive(GenericHID input) {
@@ -191,7 +201,6 @@ public class Robot extends IterativeRobot {
     
     private void armManual(GenericHID input) {
     	armMotor1.set(input.getY() * ARM_MOTOR);
-    	armMotor2.set(input.getY() * ARM_MOTOR);
     }
     
     private void driveTurn(double turnSpeed) {

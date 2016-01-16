@@ -41,6 +41,10 @@ public class TestBotPID {
 		return calcPID(setPoint - currentValue);
 	}
 	
+	public void resetError() {
+		this.integral = 0;
+	}
+	
 	private double calcPID(double error) {
 		double currentError = error;
 		double pCalc;
