@@ -20,7 +20,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * directory.
  */
 public class Robot extends IterativeRobot {
-
+//daniel senpai said to add something super awesome
+//daniel senpai said to add another comment
   private final double ARM_MOTOR = 1.0;
   private final int ARM_ENC_TICKS_REV = 1200;
   private final double ARM_P = 0.0018;
